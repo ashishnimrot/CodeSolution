@@ -56,3 +56,26 @@
 
 // console.log(subString("ashish")); // dcbae
 // console.log(subString("abcaderft"));
+
+const input = "abcaderft";
+
+let map = {};
+let c = 0;
+let total = 0;
+let count = 0;
+for (let index = 0; index < input.length; index++) {
+    count++;
+    const element = input[index];
+    if (map[`${element}`] === undefined) {
+        map[`${element}`] = index;
+    } else {
+        map = {};
+        index = index - index;
+    }
+
+    if (total < index) {
+        console.log(map);
+    }
+    total = total > index ? total : index;
+}
+console.log(total, count);
