@@ -1,0 +1,46 @@
+const input = "{}{]";
+/* output = "Balanced";
+
+input = "{";
+output = "Not balanced";
+
+input = "{]";
+output = "Not balanced"; 
+ */// 
+ 
+ const isBalance = (input = "") => {
+  if(input.length === 0) return true;
+  const stack = [];
+  const B_START_TYPES = ['{','['];
+  const B_END_TYPES = ['}',']'];
+  let status = true;
+  for(let i = 0; i<input.length; i++){
+  	  const key = input[i];
+      if(B_START_TYPES.includes(key)){
+      	stack.push(key);
+        continue;
+      }
+      const lastKey = stack.pop();
+      switch(key){
+         case '}':
+            if(lastKey === '{'){
+              	continue;
+                return; 
+            }
+          	status = false;
+         case ']':
+            if(lastKey === '['){
+              	continue;
+                return;
+            }
+            status = false;
+      }
+      if(!status) break;
+  }
+  
+  return status
+ }
+ 
+ 
+//  console.log('Testing');
+ console.log(isBalance(input));
