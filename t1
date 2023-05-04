@@ -1,0 +1,94 @@
+import axios from 'axios';
+import { File, FileGroup, Category } from './CustomDrivePicker.types';
+
+const FOLDER_MIME_TYPE = 'application/vnd.google-apps.folder';
+
+type GetFilesOptions = {
+  pageToken?: string;
+  query?: string;
+  fields?: string;
+};
+
+const getFiles = async (options?: GetFilesOptions): Promise<File[]> => {
+  const { pageToken = undefined, query = undefined, fields = 'nextPageToken, files(id, name, mimeType, modifiedTime, parents)' } = options ?? {};
+  const params: any = {
+    pageSize: 1000,
+    q: query,
+    fields,
+  };
+
+  if (pageToken) {
+    params.pageToken = pageToken;
+  }
+
+  const response = await axios.get('https://www.googleapis.com/drive/v3/files', { params });
+
+  const files = response.data.files.map((file: any) => ({
+    id: file.id,
+    name: file.name,
+    mimeType: file.mimeType,
+    modifiedTime: new Date(file.modifiedTime),
+    parents: file.parents,
+  }));
+
+  const nextPageToken = response.data.nextPageToken;
+
+  if (nextPageToken) {
+    const nextFiles = await getFiles({ pageToken: nextPageToken, query, fields });
+    return [...files, ...nextFiles];
+  }
+
+  return files;
+};
+
+const groupFilesByCategory = (files: File[]): FileGroup[] => {
+  const groupedFiles: FileGroup[] = [];
+
+  files.forEach((file) => {
+    if (file.mimeType === FOLDER_MIME_TYPE) {
+      const folderStructure = getFolderStructure(file, files);
+      const existingGroup = groupedFiles.find((group) => group.category === folderStructure);
+
+      if (existingGroup) {
+        existingGroup.files.push(file);
+      } else {
+        groupedFiles.push({ category: folderStructure, files: [file] });
+      }
+    } else {
+      const existingGroup = groupedFiles.find((group) => group.category === Category.MyDrive);
+
+      if (existingGroup) {
+        existingGroup.files.push(file);
+      } else {
+        groupedFiles.push({ category: Category.MyDrive, files: [file] });
+      }
+    }
+  });
+
+  return groupedFiles;
+};
+
+const getFolderStructure = (file: File, allFiles: File[]): string => {
+  const parentFolders = file.parents ? file.parents.map((parentId) => allFiles.find((f) => f.id === parentId)) : [];
+
+  if (parentFolders.some((folder) => !folder)) {
+    return Category.Unknown;
+  }
+
+  const folderNames = parentFolders.map((folder) => folder!.name);
+  folderNames.push(file.name);
+
+  return folderNames.join(' > ');
+};
+
+const getFilesWithNestedFolders = async (): Promise<FileGroup[]> => {
+  const files = await getFiles({ query: "mimeType != 'application/vnd.google-apps.folder'", fields: 'files(id, name, mimeType, modifiedTime, parents)' });
+  const nestedFiles = await getFiles({ query: "mimeType = 'application/vnd.google-apps.folder'", fields: 'files(id, name, mimeType, modifiedTime, parents)' });
+
+  const allFiles = [...files, ...nestedFiles];
+  const groupedFiles = groupFilesByCategory(allFiles);
+
+  return groupedFiles;
+};
+
+export default getFilesWithNestedFolders;
