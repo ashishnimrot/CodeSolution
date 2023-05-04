@@ -1,0 +1,66 @@
+import React, { useState, useEffect } from 'react';
+import { makeStyles } from '@material-ui/core/styles';
+import { List, ListItem, ListItemIcon, ListItemText, ListSubheader, Divider } from '@material-ui/core';
+import { Folder, InsertDriveFile } from '@material-ui/icons';
+import getFilesWithNestedFolders from './getFilesWithNestedFolders';
+import { Category, File, FileGroup } from './CustomDrivePicker.types';
+
+const useStyles = makeStyles((theme) => ({
+  root: {
+    width: '100%',
+    maxWidth: 360,
+    backgroundColor: theme.palette.background.paper,
+    position: 'relative',
+    overflow: 'auto',
+    maxHeight: 300,
+  },
+  nested: {
+    paddingLeft: theme.spacing(4),
+  },
+}));
+
+const CustomDrivePicker = () => {
+  const classes = useStyles();
+  const [fileGroups, setFileGroups] = useState<FileGroup[]>([]);
+
+  useEffect(() => {
+    const fetchFiles = async () => {
+      const files = await getFilesWithNestedFolders();
+      setFileGroups(files);
+    };
+
+    fetchFiles();
+  }, []);
+
+  const renderFile = (file: File, key: string) => (
+    <ListItem key={key} button className={classes.nested}>
+      <ListItemIcon>
+        <InsertDriveFile />
+      </ListItemIcon>
+      <ListItemText primary={file.name} />
+    </ListItem>
+  );
+
+  const renderFileGroup = (fileGroup: FileGroup, key: string) => {
+    const subheader = fileGroup.category !== Category.MyDrive && <ListSubheader>{fileGroup.category}</ListSubheader>;
+    const files = fileGroup.files.map((file) => renderFile(file, `${fileGroup.category}-${file.id}`));
+
+    return (
+      <React.Fragment key={key}>
+        {subheader}
+        {files}
+        <Divider />
+      </React.Fragment>
+    );
+  };
+
+  return (
+    <List component="nav" aria-label="drive picker" className={classes.root}>
+      {renderFileGroup({ category: Category.MyDrive, files: fileGroups.find((group) => group.category === Category.MyDrive)?.files ?? [] }, Category.MyDrive)}
+      {renderFileGroup(fileGroups.find((group) => group.category === Category.SharedWithMe) ?? { category: Category.SharedWithMe, files: [] }, Category.SharedWithMe)}
+      {renderFileGroup(fileGroups.find((group) => group.category === Category.SharedDrive) ?? { category: Category.SharedDrive, files: [] }, Category.SharedDrive)}
+    </List>
+  );
+};
+
+export default CustomDrivePicker;
