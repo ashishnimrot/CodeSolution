@@ -1,0 +1,245 @@
+import axios from 'axios';
+
+const BASE_URL = 'https://www.googleapis.com/drive/v3';
+
+const fetchFilesFromMyDrive = async (headers: { [key: string]: string }) => {
+  try {
+    const response = await axios.get(`${BASE_URL}/files`, {
+      params: {
+        q: "trashed = false and 'root' in parents",
+        fields: 'files(id, name, mimeType, thumbnailLink, owners(displayName, email))',
+      },
+      headers,
+    });
+    return response.data.files;
+  } catch (error) {
+    throw new Error(`Failed to fetch files from My Drive: ${error.message}`);
+  }
+};
+
+const fetchFilesFromSharedWithMe = async (headers: { [key: string]: string }) => {
+  try {
+    const response = await axios.get(`${BASE_URL}/files`, {
+      params: {
+        q: "trashed = false and 'sharedWithMe' in owners",
+        fields: 'files(id, name, mimeType, thumbnailLink, owners(displayName, email))',
+      },
+      headers,
+    });
+    return response.data.files;
+  } catch (error) {
+    throw new Error(`Failed to fetch files from Shared with me: ${error.message}`);
+  }
+};
+
+const fetchFolders = async (headers: { [key: string]: string }) => {
+  try {
+    const response = await axios.get(`${BASE_URL}/files`, {
+      params: {
+        q: "trashed = false and mimeType = 'application/vnd.google-apps.folder' and 'root' in parents",
+        fields: 'files(id, name, mimeType, thumbnailLink, owners(displayName, email))',
+      },
+      headers,
+    });
+    return response.data.files;
+  } catch (error) {
+    throw new Error(`Failed to fetch folders: ${error.message}`);
+  }
+};
+
+const fetchFilesFromSharedDrives = async (headers: { [key: string]: string }) => {
+  try {
+    const response = await axios.get(`${BASE_URL}/drives`, {
+      params: {
+        fields: 'drives(id, name, createdTime, quotaBytesTotal, quotaBytesUsed, files(id, name, mimeType, thumbnailLink, owners(displayName, email)))',
+      },
+      headers,
+    });
+    const drives: any[] = response.data.drives;
+    return drives.flatMap((drive) => drive.files);
+  } catch (error) {
+    throw new Error(`Failed to fetch files from Shared drives: ${error.message}`);
+  }
+};
+
+export { fetchFilesFromMyDrive, fetchFilesFromSharedWithMe, fetchFolders, fetchFilesFromSharedDrives };
+
+===========================================================================================================
+
+import axios from 'axios';
+import { Category, File } from './CustomDrivePicker.types';
+
+const BASE_URL = 'https://www.googleapis.com/drive/v3';
+
+export const getFiles = async (): Promise<Category[]> => {
+  const headers = {
+    Authorization: `Bearer ${gapi.auth.getToken().access_token}`,
+  };
+
+  try {
+    // Get files from My Drive
+    const myDriveResponse = await axios.get(`${BASE_URL}/files`, {
+      params: {
+        q: "trashed = false and 'root' in parents",
+        fields: 'files(id, name, mimeType, thumbnailLink, owners(displayName, email))',
+      },
+      headers,
+    });
+    const myDriveFiles: File[] = myDriveResponse.data.files;
+
+    // Get files from Shared with me
+    const sharedWithMeResponse = await axios.get(`${BASE_URL}/files`, {
+      params: {
+        q: "trashed = false and 'sharedWithMe' in owners",
+        fields: 'files(id, name, mimeType, thumbnailLink, owners(displayName, email))',
+      },
+      headers,
+    });
+    const sharedWithMeFiles: File[] = sharedWithMeResponse.data.files;
+
+    // Get folders
+    const foldersResponse = await axios.get(`${BASE_URL}/files`, {
+      params: {
+        q: "trashed = false and mimeType = 'application/vnd.google-apps.folder' and 'root' in parents",
+        fields: 'files(id, name, mimeType, thumbnailLink, owners(displayName, email))',
+      },
+      headers,
+    });
+    const folderFiles: File[] = foldersResponse.data.files;
+
+    // Get files from Shared drives
+    const sharedDrivesResponse = await axios.get(`${BASE_URL}/drives`, {
+      params: {
+        fields: 'drives(id, name, createdTime, quotaBytesTotal, quotaBytesUsed, files(id, name, mimeType, thumbnailLink, owners(displayName, email)))',
+      },
+      headers,
+    });
+    const sharedDrives: any[] = sharedDrivesResponse.data.drives;
+    const sharedDriveFiles: File[] = sharedDrives.flatMap((drive) => drive.files);
+
+    // Get the parent folder ID for each file
+    const fileParents: { [key: string]: string } = {};
+    myDriveFiles.concat(folderFiles).concat(sharedWithMeFiles).concat(sharedDriveFiles).forEach((file: File) => {
+      if (file.parents) {
+        file.parents.forEach((parentId) => {
+          fileParents[file.id] = parentId;
+        });
+      }
+    });
+
+    // Categorize files by their parent folder
+    const categories: Category[] = [
+      { category: 'My Drive', files: [] },
+      { category: 'Shared with me', files: [] },
+    ];
+    const folders: { [key: string]: File[] } = {};
+    folderFiles.concat(sharedDriveFiles).forEach((folder) => {
+      if (!folders[folder.id]) {
+        folders[folder.id] = [];
+      }
+      folders[folder.id].push(folder);
+    });
+
+    myDriveFiles.concat(sharedWithMeFiles).forEach((file) => {
+      if (fileParents[file.id]) {
+        const parentFolder = folders[fileParents[file.id]];
+        if (parentFolder) {
+          parentFolder.push(file);
+        }
+      } else {
+        if (file.owners && file.owners.length > 0) {
+          categories[0].files.push(file);
+        } else {
+          categories[1].files.push(file);
+        }
+      }
+    });
+
+====================================================================================================================================
+
+
+export interface File {
+  id: string;
+  title: string;
+  mimeType: string;
+  thumbnailLink?: string;
+  owners?: { displayName: string; email: string }[];
+  ownerNames?: string[];
+}
+
+export interface Category {
+  category: string;
+  files: File[];
+}
+ ==================================================================
+ 
+ 
+ import { useState } from 'react';
+import {
+  Button,
+  Dialog,
+  DialogTitle,
+  Divider,
+  List,
+  ListItem,
+  ListItemIcon,
+  ListItemText
+} from '@material-ui/core';
+import InboxIcon from '@material-ui/icons/Inbox';
+import { Category, File } from './CustomDrivePicker.types';
+import { getFiles } from './getFiles';
+
+const CustomDrivePicker: React.FC = () => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [files, setFiles] = useState<Category[]>([]);
+
+  const handleOpen = () => {
+    setIsOpen(true);
+    getFiles().then((categories) => {
+      setFiles(categories);
+    });
+  };
+
+  const handleClose = () => {
+    setIsOpen(false);
+  };
+
+  return (
+    <>
+      <Button variant="contained" color="primary" onClick={handleOpen}>
+        Open Custom Drive Picker
+      </Button>
+      <Dialog onClose={handleClose} open={isOpen}>
+        <DialogTitle>Custom Drive Picker</DialogTitle>
+        <List>
+          {files.map((category: Category) => (
+            <>
+              <Divider key={`${category.category}-divider`} />
+              <ListItem key={category.category}>
+                <ListItemText primary={category.category} />
+              </ListItem>
+              <Divider key={`${category.category}-divider2`} />
+              {category.files.map((file: File) => (
+                <ListItem button key={file.id}>
+                  <ListItemIcon>
+                    {file.mimeType === 'application/vnd.google-apps.folder' ? (
+                      <InboxIcon />
+                    ) : (
+                      <img src={file.thumbnailLink || '/file-icon.png'} alt="" />
+                    )}
+                  </ListItemIcon>
+                  <ListItemText primary={file.title} secondary={file.ownerNames?.join(', ')} />
+                </ListItem>
+              ))}
+            </>
+          ))}
+        </List>
+      </Dialog>
+    </>
+  );
+};
+
+export default CustomDrivePicker;
+
+
+
