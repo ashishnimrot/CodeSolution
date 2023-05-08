@@ -1,18 +1,14 @@
-import React, { useState } from 'react';
-import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Button,
-  List,
-  ListItem,
-  ListItemIcon,
-  ListItemText,
-  IconButton,
-  makeStyles,
-} from '@material-ui/core';
-import { Folder as FolderIcon, InsertDriveFile as FileIcon, ArrowBack as ArrowBackIcon } from '@material-ui/icons';
+import React from 'react';
+import { DialogTitle, IconButton, makeStyles } from '@material-ui/core';
+import { ArrowBack as ArrowBackIcon } from '@material-ui/icons';
+import { DialogContent, List, Divider } from '@material-ui/core';
+
+
+interface DialogTitleComponentProps {
+  breadcrumbs: { id: string; name: string }[];
+  onBackClick: () => void;
+  backButtonDisabled: boolean;
+}
 
 const useStyles = makeStyles((theme) => ({
   dialogTitle: {
@@ -20,37 +16,95 @@ const useStyles = makeStyles((theme) => ({
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  listItemIcon: {
-    minWidth: 36,
-  },
 }));
 
-const FileItem = ({ file, onClick }) => {
-  const classes = useStyles();
-  const IconComponent = file.mimeType === 'application/vnd.google.apps.folder' ? FolderIcon : FileIcon;
-  const handleClick = () => onClick(file);
+const DialogContentComponent: React.FC<DialogContentComponentProps> = ({ files, onItemClick }) => {
+  const sortedFolders = files
+    .filter((file) => file.mimeType === 'application/vnd.google.apps.folder')
+    .sort((a, b) => a.name.localeCompare(b.name));
+
+  const sortedFiles = files
+    .filter((file) => file.mimeType !== 'application/vnd.google.apps.folder')
+    .sort((a, b) => a.name.localeCompare(b.name));
 
   return (
-    <ListItem button onClick={handleClick}>
-      <ListItemIcon className={classes.listItemIcon}>
-        <IconComponent />
-      </ListItemIcon>
-      <ListItemText primary={file.name} />
-    </ListItem>
+    <DialogContent>
+      <List>
+        {sortedFolders.map((file) => (
+          <FileItem key={file.id} file={file} onClick={onItemClick} />
+        ))}
+        {sortedFolders.length > 0 && sortedFiles.length > 0 && <Divider />}
+        {sortedFiles.map((file) => (
+          <FileItem key={file.id} file={file} onClick={onItemClick} />
+        ))}
+      </List>
+    </DialogContent>
   );
 };
 
-const FilePickerDialog = ({ open, onClose, files }) => {
-  const classes = useStyles();
-  const [currentFolder, setCurrentFolder] = useState(null);
-  const [breadcrumbs, setBreadcrumbs] = useState([]);
+export default DialogTitleComponent;
 
-  const handleFolderClick = (folder) => {
+
+import React from 'react';
+import { DialogContent, List } from '@material-ui/core';
+import FileItem from './FileItem';
+
+interface DialogContentComponentProps {
+  files: { id: string; name: string; mimeType: string }[];
+  onItemClick: (file: { id: string; name: string; mimeType: string }) => void;
+}
+
+const DialogContentComponent: React.FC<DialogContentComponentProps> = ({ files, onItemClick }) => {
+  return (
+    <DialogContent>
+      <List>
+        {files.map((file) => (
+          <FileItem key={file.id} file={file} onClick={onItemClick} />
+        ))}
+      </List>
+    </DialogContent>
+  );
+};
+
+export default DialogContentComponent;
+
+import React from 'react';
+import { DialogActions, Button } from '@material-ui/core';
+
+interface DialogActionsComponentProps {
+  onClose: () => void;
+}
+
+const DialogActionsComponent: React.FC<DialogActionsComponentProps> = ({ onClose }) => {
+  return (
+    <DialogActions>
+      <Button onClick={onClose} color="primary">
+        Cancel
+      </Button>
+    </DialogActions>
+  );
+};
+
+export default DialogActionsComponent;
+
+import React, { useState } from 'react';
+import { Dialog } from '@material-ui/core';
+import DialogTitleComponent from './DialogTitleComponent';
+import DialogContentComponent from './DialogContentComponent';
+import DialogActionsComponent from './DialogActionsComponent';
+import FileItem from './FileItem';
+import { FileObject, FilePickerDialogProps } from './types';
+
+const FilePickerDialog: React.FC<FilePickerDialogProps> = ({ open, onClose, files }) => {
+  const [currentFolder, setCurrentFolder] = useState<string | null>(null);
+  const [breadcrumbs, setBreadcrumbs] = useState<FileObject[]>([]);
+
+  const handleFolderClick = (folder: FileObject) => {
     setCurrentFolder(folder.id);
     setBreadcrumbs([...breadcrumbs, folder]);
   };
 
-  const handleFileClick = (file) => {
+  const handleFileClick = (file: FileObject) => {
     console.log('Selected file:', file);
   };
 
@@ -61,7 +115,7 @@ const FilePickerDialog = ({ open, onClose, files }) => {
     setCurrentFolder(newBreadcrumbs[newBreadcrumbs.length - 1]?.id || null);
   };
 
-  const handleClick = (file) => {
+  const handleClick = (file: FileObject) => {
     if (file.mimeType === 'application/vnd.google.apps.folder') {
       handleFolderClick(file);
     } else {
@@ -81,35 +135,18 @@ const FilePickerDialog = ({ open, onClose, files }) => {
 
   return (
     <Dialog open={open} onClose={handleClose} fullWidth maxWidth="sm">
-      <DialogTitle disableTypography>
-        <div className={classes.dialogTitle}>
-          <IconButton edge="start" color="inherit" onClick={handleBackClick} disabled={!breadcrumbs.length}>
-            <ArrowBackIcon />
-          </IconButton>
-          <h2>
-            {breadcrumbs.map((folder, index) => (
-              <React.Fragment key={folder.id}>
-                {index > 0 && ' > '}
-                {folder.name}
-              </React.Fragment>
-            ))}
-          </h2>
-        </div>
-      </DialogTitle>
-      <DialogContent>
-        <List>
-          {visibleFiles.map((file) => (
-            <FileItem key={file.id} file={file} onClick={handleClick} />
-          ))}
-        </List>
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={handleClose} color="primary">
-          Cancel
-        </Button>
-      </DialogActions>
+      <DialogTitleComponent
+        breadcrumbs={breadcrumbs}
+        onBackClick={handleBackClick}
+        backButtonDisabled={!breadcrumbs.length}
+      />
+      <DialogContentComponent files={visibleFiles} onItemClick={handleClick} />
+      <DialogActionsComponent onClose={handleClose} />
     </Dialog>
   );
 };
 
 export default FilePickerDialog;
+
+
+
