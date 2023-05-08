@@ -1,0 +1,115 @@
+import React, { useState } from 'react';
+import {
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Button,
+  List,
+  ListItem,
+  ListItemIcon,
+  ListItemText,
+  IconButton,
+  makeStyles,
+} from '@material-ui/core';
+import { Folder as FolderIcon, InsertDriveFile as FileIcon, ArrowBack as ArrowBackIcon } from '@material-ui/icons';
+
+const useStyles = makeStyles((theme) => ({
+  dialogTitle: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  listItemIcon: {
+    minWidth: 36,
+  },
+}));
+
+const FileItem = ({ file, onClick }) => {
+  const classes = useStyles();
+  const IconComponent = file.mimeType === 'application/vnd.google.apps.folder' ? FolderIcon : FileIcon;
+  const handleClick = () => onClick(file);
+
+  return (
+    <ListItem button onClick={handleClick}>
+      <ListItemIcon className={classes.listItemIcon}>
+        <IconComponent />
+      </ListItemIcon>
+      <ListItemText primary={file.name} />
+    </ListItem>
+  );
+};
+
+const FilePickerDialog = ({ open, onClose, files }) => {
+  const classes = useStyles();
+  const [currentFolder, setCurrentFolder] = useState(null);
+  const [breadcrumbs, setBreadcrumbs] = useState([]);
+
+  const handleFolderClick = (folder) => {
+    setCurrentFolder(folder.id);
+    setBreadcrumbs([...breadcrumbs, folder]);
+  };
+
+  const handleFileClick = (file) => {
+    console.log('Selected file:', file);
+  };
+
+  const handleBackClick = () => {
+    const newBreadcrumbs = [...breadcrumbs];
+    newBreadcrumbs.pop();
+    setBreadcrumbs(newBreadcrumbs);
+    setCurrentFolder(newBreadcrumbs[newBreadcrumbs.length - 1]?.id || null);
+  };
+
+  const handleClick = (file) => {
+    if (file.mimeType === 'application/vnd.google.apps.folder') {
+      handleFolderClick(file);
+    } else {
+      handleFileClick(file);
+    }
+  };
+
+  const handleClose = () => {
+    setCurrentFolder(null);
+    setBreadcrumbs([]);
+    onClose();
+  };
+
+  const visibleFiles = files.filter(
+    (file) => (currentFolder === null && !file.parents) || (file.parents && file.parents.includes(currentFolder))
+  );
+
+  return (
+    <Dialog open={open} onClose={handleClose} fullWidth maxWidth="sm">
+      <DialogTitle disableTypography>
+        <div className={classes.dialogTitle}>
+          <IconButton edge="start" color="inherit" onClick={handleBackClick} disabled={!breadcrumbs.length}>
+            <ArrowBackIcon />
+          </IconButton>
+          <h2>
+            {breadcrumbs.map((folder, index) => (
+              <React.Fragment key={folder.id}>
+                {index > 0 && ' > '}
+                {folder.name}
+              </React.Fragment>
+            ))}
+          </h2>
+        </div>
+      </DialogTitle>
+      <DialogContent>
+        <List>
+          {visibleFiles.map((file) => (
+            <FileItem key={file.id} file={file} onClick={handleClick} />
+          ))}
+        </List>
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={handleClose} color="primary">
+          Cancel
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
+};
+
+export default FilePickerDialog;
