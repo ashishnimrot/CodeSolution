@@ -1,0 +1,157 @@
+const dummyData = [
+  { id: '1', name: 'Folder_A', mimeType: 'application/vnd.google.apps.folder', parents: null },
+  { id: '2', name: 'File_1A', mimeType: 'application/vnd.google.apps.spreadsheet', parents: ['1'] },
+  { id: '3', name: 'Folder_AA', mimeType: 'application/vnd.google.apps.folder', parents: ['1'] },
+  { id: '4', name: 'File_2A', mimeType: 'application/vnd.google.apps.spreadsheet', parents: ['3'] },
+  { id: '5', name: 'Folder_B', mimeType: 'application/vnd.google.apps.folder', parents: null },
+  { id: '6', name: 'File_1B', mimeType: 'application/vnd.google.apps.spreadsheet', parents: ['5'] },
+  { id: '7', name: 'Folder_BB', mimeType: 'application/vnd.google.apps.folder', parents: ['5'] },
+  { id: '8', name: 'File_2B', mimeType: 'application/vnd.google.apps.spreadsheet', parents: ['7'] },
+];
+
+function buildNestedStructure(files, parent = null, breadcrumb = '') {
+  const result = [];
+
+  for (const file of files) {
+    const hasParent = file.parents && file.parents.includes(parent);
+    if ((!file.parents && parent === null) || hasParent) {
+      const currentBreadcrumb = breadcrumb ? `${breadcrumb} > ${file.name}` : file.name;
+      const children = buildNestedStructure(files, file.id, currentBreadcrumb);
+      if (children.length) {
+        file.children = children;
+      }
+      file.breadcrumb = currentBreadcrumb;
+      result.push(file);
+    }
+  }
+
+  return result;
+}
+
+const nestedStructure = buildNestedStructure(dummyData);
+console.log(JSON.stringify(nestedStructure, null, 2));
+
+
+
+import React, { useState } from 'react';
+import { Dialog, DialogTitle, DialogContent, DialogActions, Button, List, ListItem, ListItemIcon, ListItemText, IconButton } from '@material-ui/core';
+import { Folder as FolderIcon, InsertDriveFile as FileIcon, ArrowBack as ArrowBackIcon } from '@material-ui/icons';
+
+const FileItem = ({ file, onClick }) => {
+  const IconComponent = file.mimeType === 'application/vnd.google.apps.folder' ? FolderIcon : FileIcon;
+  const handleClick = () => onClick(file);
+
+  return (
+    <ListItem button onClick={handleClick}>
+      <ListItemIcon>
+        <IconComponent />
+      </ListItemIcon>
+      <ListItemText primary={file.name} />
+    </ListItem>
+  );
+};
+
+const FilePickerDialog = ({ open, onClose, files }) => {
+  const [currentFolder, setCurrentFolder] = useState(null);
+  const [breadcrumbs, setBreadcrumbs] = useState([]);
+
+  const handleFolderClick = (folder) => {
+    setCurrentFolder(folder.id);
+    setBreadcrumbs([...breadcrumbs, folder]);
+  };
+
+  const handleFileClick = (file) => {
+    console.log('Selected file:', file);
+  };
+
+  const handleBackClick = () => {
+    const newBreadcrumbs = [...breadcrumbs];
+    newBreadcrumbs.pop();
+    setBreadcrumbs(newBreadcrumbs);
+    setCurrentFolder(newBreadcrumbs[newBreadcrumbs.length - 1]?.id || null);
+  };
+
+  const handleClick = (file) => {
+    if (file.mimeType === 'application/vnd.google.apps.folder') {
+      handleFolderClick(file);
+    } else {
+      handleFileClick(file);
+    }
+  };
+
+  const handleClose = () => {
+    setCurrentFolder(null);
+    setBreadcrumbs([]);
+    onClose();
+  };
+
+  const visibleFiles = files.filter(
+    (file) => (currentFolder === null && !file.parents) || (file.parents && file.parents.includes(currentFolder))
+  );
+
+  return (
+    <Dialog open={open} onClose={handleClose} fullWidth maxWidth="sm">
+      <DialogTitle>
+        <IconButton edge="start" color="inherit" onClick={handleBackClick} disabled={!breadcrumbs.length}>
+          <ArrowBackIcon />
+        </IconButton>
+        {breadcrumbs.map((folder, index) => (
+          <React.Fragment key={folder.id}>
+            {index > 0 && ' > '}
+            {folder.name}
+          </React.Fragment>
+        ))}
+      </DialogTitle>
+      <DialogContent>
+        <List>
+          {visibleFiles.map((file) => (
+            <FileItem key={file.id} file={file} onClick={handleClick} />
+          ))}
+        </List>
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={handleClose} color="primary">
+          Cancel
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
+};
+
+
+import React, { useState } from 'react';
+import { Button } from '@material-ui/core';
+import FilePickerDialog from './FilePickerDialog';
+
+const App = () => {
+  const [open, setOpen] = useState(false);
+
+  const handleOpen = () => {
+    setOpen(true);
+  };
+
+  const handleClose = () => {
+    setOpen(false);
+  };
+
+  return (
+    <div>
+      <Button variant="contained" color="primary" onClick={handleOpen}>
+        Select File
+      </Button>
+      <FilePickerDialog open={open} onClose={handleClose} files={dummyData} />
+    </div>
+  );
+};
+
+export default App;
+
+
+
+
+
+
+
+
+
+
