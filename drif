@@ -1,24 +1,29 @@
-import React from 'react';
-import { DialogTitle, IconButton, makeStyles } from '@material-ui/core';
-import { ArrowBack as ArrowBackIcon } from '@material-ui/icons';
-import { DialogContent, List, Divider } from '@material-ui/core';
-
-
-interface DialogTitleComponentProps {
-  breadcrumbs: { id: string; name: string }[];
-  onBackClick: () => void;
-  backButtonDisabled: boolean;
-}
+import React, { useState } from 'react';
+import { DialogContent, List, Divider, Grid, Button } from '@material-ui/core';
+import ViewListIcon from '@material-ui/icons/ViewList';
+import ViewModuleIcon from '@material-ui/icons/ViewModule';
+import { makeStyles } from '@material-ui/core/styles';
+import FileItem from './FileItem';
 
 const useStyles = makeStyles((theme) => ({
-  dialogTitle: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+  viewSwitchButton: {
+    marginBottom: theme.spacing(1),
   },
 }));
 
+interface DialogContentComponentProps {
+  files: { id: string; name: string; mimeType: string }[];
+  onItemClick: (file: { id: string; name: string; mimeType: string }) => void;
+}
+
 const DialogContentComponent: React.FC<DialogContentComponentProps> = ({ files, onItemClick }) => {
+  const classes = useStyles();
+  const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
+
+  const handleViewModeToggle = () => {
+    setViewMode((prev) => (prev === 'list' ? 'grid' : 'list'));
+  };
+
   const sortedFolders = files
     .filter((file) => file.mimeType === 'application/vnd.google.apps.folder')
     .sort((a, b) => a.name.localeCompare(b.name));
@@ -27,8 +32,10 @@ const DialogContentComponent: React.FC<DialogContentComponentProps> = ({ files, 
     .filter((file) => file.mimeType !== 'application/vnd.google.apps.folder')
     .sort((a, b) => a.name.localeCompare(b.name));
 
-  return (
-    <DialogContent>
+  const sortedItems = [...sortedFolders, ...sortedFiles];
+
+  const renderListView = () => {
+    return (
       <List>
         {sortedFolders.map((file) => (
           <FileItem key={file.id} file={file} onClick={onItemClick} />
@@ -38,54 +45,38 @@ const DialogContentComponent: React.FC<DialogContentComponentProps> = ({ files, 
           <FileItem key={file.id} file={file} onClick={onItemClick} />
         ))}
       </List>
-    </DialogContent>
-  );
-};
+    );
+  };
 
-export default DialogTitleComponent;
+  const renderGridView = () => {
+    return (
+      <Grid container spacing={2}>
+        {sortedItems.map((file) => (
+          <Grid item xs={12} sm={6} md={4} key={file.id}>
+            <FileItem file={file} onClick={onItemClick} />
+          </Grid>
+        ))}
+      </Grid>
+    );
+  };
 
-
-import React from 'react';
-import { DialogContent, List } from '@material-ui/core';
-import FileItem from './FileItem';
-
-interface DialogContentComponentProps {
-  files: { id: string; name: string; mimeType: string }[];
-  onItemClick: (file: { id: string; name: string; mimeType: string }) => void;
-}
-
-const DialogContentComponent: React.FC<DialogContentComponentProps> = ({ files, onItemClick }) => {
   return (
     <DialogContent>
-      <List>
-        {files.map((file) => (
-          <FileItem key={file.id} file={file} onClick={onItemClick} />
-        ))}
-      </List>
+      <Button
+        className={classes.viewSwitchButton}
+        startIcon={viewMode === 'list' ? <ViewModuleIcon /> : <ViewListIcon />}
+        onClick={handleViewModeToggle}
+      >
+        {viewMode === 'list' ? 'Switch to Grid View' : 'Switch to List View'}
+      </Button>
+      {viewMode === 'list' ? renderListView() : renderGridView()}
     </DialogContent>
   );
 };
 
 export default DialogContentComponent;
 
-import React from 'react';
-import { DialogActions, Button } from '@material-ui/core';
 
-interface DialogActionsComponentProps {
-  onClose: () => void;
-}
-
-const DialogActionsComponent: React.FC<DialogActionsComponentProps> = ({ onClose }) => {
-  return (
-    <DialogActions>
-      <Button onClick={onClose} color="primary">
-        Cancel
-      </Button>
-    </DialogActions>
-  );
-};
-
-export default DialogActionsComponent;
 
 import React, { useState } from 'react';
 import { Dialog } from '@material-ui/core';
@@ -147,6 +138,76 @@ const FilePickerDialog: React.FC<FilePickerDialogProps> = ({ open, onClose, file
 };
 
 export default FilePickerDialog;
+
+
+
+
+import React from 'react';
+import { DialogActions, Button } from '@material-ui/core';
+
+interface DialogActionsComponentProps {
+  onClose: () => void;
+}
+
+const DialogActionsComponent: React.FC<DialogActionsComponentProps> = ({ onClose }) => {
+  return (
+    <DialogActions>
+      <Button onClick={onClose} color="primary">
+        Cancel
+      </Button>
+    </DialogActions>
+  );
+};
+
+export default DialogActionsComponent;
+
+
+import React from 'react';
+import { DialogTitle, IconButton, makeStyles } from '@material-ui/core';
+import { ArrowBack as ArrowBackIcon } from '@material-ui/icons';
+
+interface DialogTitleComponentProps {
+  breadcrumbs: { id: string; name: string }[];
+  onBackClick: () => void;
+  backButtonDisabled: boolean;
+}
+
+const useStyles = makeStyles((theme) => ({
+  dialogTitle: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+}));
+
+const DialogTitleComponent: React.FC<DialogTitleComponentProps> = ({ breadcrumbs, onBackClick, backButtonDisabled }) => {
+  const classes = useStyles();
+
+  return (
+    <DialogTitle disableTypography>
+      <div className={classes.dialogTitle}>
+        <IconButton edge="start" color="inherit" onClick={onBackClick} disabled={backButtonDisabled}>
+          <ArrowBackIcon />
+        </IconButton>
+        <h2>
+          {breadcrumbs.map((folder, index) => (
+            <React.Fragment key={folder.id}>
+              {index > 0 && ' > '}
+              {folder.name}
+            </React.Fragment>
+          ))}
+        </h2>
+      </div>
+    </DialogTitle>
+  );
+};
+
+export default DialogTitleComponent;
+
+
+
+
+
 
 
 
