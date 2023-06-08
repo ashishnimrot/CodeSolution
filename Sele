@@ -1,0 +1,50 @@
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.common.action_chains import ActionChains
+
+# Replace with the path to your browser driver
+driver = webdriver.Chrome(executable_path=r'C:\path\to\chromedriver.exe')
+
+# Step 1: Open the URL
+driver.get('url')  # Replace 'url' with your URL
+
+# Step 2: Perform login
+username_field = driver.find_element_by_name('username')  # Replace 'username' with the actual element name or id
+password_field = driver.find_element_by_name('password')  # Replace 'password' with the actual element name or id
+username_field.send_keys('username')  # Replace 'username' with your username
+password_field.send_keys('password')  # Replace 'password' with your password
+
+login_button = driver.find_element_by_name('login')  # Replace 'login' with the actual login button id or name
+login_button.click()
+
+# Wait until login is successful (or add other checks here as needed)
+WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, 'id_after_login')))
+
+# Step 3: Select right menu option Files Upload then select sub menu ABC
+# Please replace dummy selectors with actual ones
+menu = driver.find_element_by_xpath('//a[@href="#files-upload"]')
+submenu = driver.find_element_by_xpath('//a[@href="#abc"]')
+
+actions = ActionChains(driver)
+actions.move_to_element(menu)
+actions.move_to_element(submenu).click().perform()
+
+# Step 4: Select drag and drop file 
+upload = driver.find_element_by_id('drag-drop-area')  # Replace 'drag-drop-area' with the actual ID
+
+# Step 5: Upload file from selected local file explorer
+upload.send_keys('C:\\path\\to\\file.txt')  # Replace with your file path
+
+# Step 6: Then select affect files button
+affect_button = driver.find_element_by_id('affect-files-button')  # Replace with the actual ID
+affect_button.click()
+
+# Step 7: Press send file button
+send_button = driver.find_element_by_id('send-file-button')  # Replace with the actual ID
+send_button.click()
+
+# Step 8: Select Execute button
+execute_button = driver.find_element_by_id('execute-button')  # Replace with the actual ID
+execute_button.click()
