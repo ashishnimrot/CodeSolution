@@ -1,0 +1,15 @@
+const add = (x) => {
+    let sum = x;
+    const helper = (y) => {
+        if(y != undefined){
+            sum += y;
+            return helper
+        }else{
+            return sum;
+        }
+    }
+    return helper;
+} 
+console.log(add(1)(2)(3)(4)())
+console.log(add(1)(2)())
+console.log(add(4)(4)(4)())
