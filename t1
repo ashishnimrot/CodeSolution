@@ -1,3 +1,36 @@
+
+
+KT Document Sharing
+
+Model: GPT-4
+
+User
+Write email for KT document sharing 
+
+ChatGPT
+Subject: Knowledge Transfer (KT) Document Sharing
+
+Dear [Recipient's Name],
+
+I hope this message finds you in good health and high spirits.
+
+I am writing to share with you the knowledge transfer (KT) document related to our recent project, [project name]. This document contains detailed insights about the project, including specifications, process flow, best practices, challenges faced, and our strategies to overcome those.
+
+This KT document is designed to provide you with comprehensive knowledge about the project and the various aspects associated with it. I trust that this will enhance your understanding and ensure smooth continuation of the work. Whether you are a new member onboarding to the team or an existing member trying to better grasp the project, I hope you find this information helpful.
+
+I have attached the document to this email for your convenience. Please take the time to review the material and do not hesitate to reach out if you have any questions, concerns or if something is unclear. I am more than happy to schedule a follow-up meeting to discuss the document in further detail, should you require it.
+
+The goal is to make this transition as smooth as possible, and your feedback on this process will be highly appreciated. Please share your thoughts about the document and the knowledge transfer process, so we can continue to improve.
+
+Looking forward to hearing your valuable feedback.
+
+Best Regards,
+
+[Your Name]
+[Your Position]
+[Your Contact Information]
+
+
 import axios from 'axios';
 import { File, FileGroup, Category } from './CustomDrivePicker.types';
 
