@@ -1,0 +1,28 @@
+function convertLinks(input) {
+    // Regular Expression to match each line and its components
+    const regex = /<([^>]*)>:\s<([^>]*)>/g;
+
+    // Initialize output array
+    let output = [];
+
+    // Extract matches from input
+    let match;
+    while ((match = regex.exec(input)) !== null) {
+        // Extract title and link from match
+        let title = match[1];
+        let link = match[2];
+
+        // Push a new object to the output array
+        output.push({
+            title: title,
+            link: link
+        });
+    }
+
+    return output;
+}
+
+const input = `<ABC XYZ>: <https://tesddd.test.com/file/d/78r994927942794kjfhsjfllsfjlj/>
+<xyz abc>: <https://fdslf.fksjdkfs.com/file/d/lfdjslfjsli34242l49n,nflsnlfdklfslfas/>`;
+
+console.log(convertLinks(input));
