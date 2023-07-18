@@ -1,0 +1,82 @@
+// Module.types.ts
+
+export interface Service {
+  icon: string;
+  name: string;
+  description: string;
+}
+
+export interface ModuleProps {
+  services: Service[];
+}
+
+
+// Module.styles.ts
+
+import { styled } from '@mui/system';
+import { Button as MuiButton, Box as MuiBox } from '@mui/material';
+
+export const Button = styled(MuiButton)({
+  // you can add your own styles here
+});
+
+export const Box = styled(MuiBox)({
+  // you can add your own styles here
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'center',
+  justifyContent: 'center',
+  height: '100vh'
+});
+
+
+// Module.tsx
+
+import React from 'react';
+import List from '@mui/material/List';
+import ListItem from '@mui/material/ListItem';
+import ListItemText from '@mui/material/ListItemText';
+import ListItemAvatar from '@mui/material/ListItemAvatar';
+import Avatar from '@mui/material/Avatar';
+import Typography from '@mui/material/Typography';
+import { ModuleProps } from './Module.types';
+import { Button, Box } from './Module.styles';
+
+const Module: React.FC<ModuleProps> = ({ services }) => {
+  if (services.length === 0) {
+    return (
+      <Box>
+        <Button variant="contained" color="primary">
+          CONNECT A SERVICE
+        </Button>
+      </Box>
+    );
+  } else {
+    return (
+      <List>
+        {services.map((service, index) => (
+          <ListItem key={index}>
+            <ListItemAvatar>
+              <Avatar src={service.icon} />
+            </ListItemAvatar>
+            <ListItemText
+              primary={service.name}
+              secondary={
+                <Typography
+                  sx={{ display: 'inline' }}
+                  component="span"
+                  variant="body2"
+                  color="text.primary"
+                >
+                  {service.description}
+                </Typography>
+              }
+            />
+          </ListItem>
+        ))}
+      </List>
+    );
+  }
+}
+
+export default Module;
