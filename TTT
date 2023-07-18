@@ -135,3 +135,67 @@ const ServiceListItem: React.FC<ServiceListItemProps> = ({ service }) => {
 
 export default ServiceListItem;
 
+
+
+==========================================================
+// ServiceListItem.styles.ts
+
+import { styled } from '@mui/system';
+import { Card as MuiCard } from '@mui/material';
+
+export const Card = styled(MuiCard)(({ theme }) => ({
+  width: '90%',
+  marginLeft: 'auto',
+  marginRight: 'auto',
+  borderLeft: '4px solid #D68910',
+  marginBottom: theme.spacing(2),
+  display: 'flex',
+  justifyContent: 'space-between',
+  alignItems: 'center',
+}));
+
+export const CardContentWrapper = styled('div')({
+  display: 'flex',
+  alignItems: 'center',
+});
+
+
+// ServiceListItem.tsx
+
+import React from 'react';
+import CardContent from '@mui/material/CardContent';
+import Typography from '@mui/material/Typography';
+import IconButton from '@mui/material/IconButton';
+import MoreVertIcon from '@mui/icons-material/MoreVert';
+import { Service } from './Module.types';
+import { Card, CardContentWrapper } from './ServiceListItem.styles';
+
+interface ServiceListItemProps {
+  service: Service;
+}
+
+const ServiceListItem: React.FC<ServiceListItemProps> = ({ service }) => {
+  return (
+    <Card>
+      <CardContent>
+        <CardContentWrapper>
+          <img src={service.icon} alt={service.name} style={{ marginRight: '10px' }} />
+          <div>
+            <Typography variant="h5" component="div">
+              {service.name}
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              {service.description}
+            </Typography>
+          </div>
+        </CardContentWrapper>
+      </CardContent>
+      <IconButton>
+        <MoreVertIcon />
+      </IconButton>
+    </Card>
+  );
+}
+
+export default ServiceListItem;
+
