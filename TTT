@@ -307,3 +307,52 @@ const GenericDialogForm: React.FC<GenericDialogFormProps> = ({ title, open, hand
 };
 
 export default GenericDialogForm;
+
+=====================================================
+import React, { useState } from "react";
+import Button from '@mui/material/Button';
+import GenericDialogForm from "./GenericDialogForm";
+
+const App: React.FC = () => {
+  const [open, setOpen] = useState(false);
+
+  const handleClickOpen = () => {
+    setOpen(true);
+  };
+
+  const handleClose = () => {
+    setOpen(false);
+  };
+
+  const handleSubmit = (data: any) => {
+    console.log(data);
+  };
+
+  const fields = [
+    { name: 'connect', label: 'Connect', defaultValue: "Default connect", type: "text" },
+    { name: 'description', label: 'Description', defaultValue: "Default description", type: "text", multiline: true },
+    { name: 'search', label: 'Search', defaultValue: "Default search", type: "search" },
+    { name: 'select', label: 'Select', defaultValue: "Option1", type: "select", options: ["Option1", "Option2", "Option3"] },
+    { name: 'checkbox', label: 'Checkbox', defaultValue: false, type: "checkbox" },
+    { name: 'radio', label: 'Radio', defaultValue: "Option1", type: "radio", options: ["Option1", "Option2", "Option3"] },
+    { name: 'date', label: 'Date', defaultValue: new Date(), type: "date" },
+  ];
+
+  return (
+    <div>
+      <Button variant="outlined" onClick={handleClickOpen}>
+        Open form dialog
+      </Button>
+      <GenericDialogForm
+        title="Connection Description"
+        open={open}
+        handleClose={handleClose}
+        fields={fields}
+        onSubmit={handleSubmit}
+      />
+    </div>
+  );
+};
+
+export default App;
+
