@@ -199,3 +199,111 @@ const ServiceListItem: React.FC<ServiceListItemProps> = ({ service }) => {
 
 export default ServiceListItem;
 
+======================================================================================
+import * as React from 'react';
+import { useForm, Controller, Control } from "react-hook-form";
+import Button from '@mui/material/Button';
+import Dialog from '@mui/material/Dialog';
+import DialogActions from '@mui/material/DialogActions';
+import DialogContent from '@mui/material/DialogContent';
+import DialogTitle from '@mui/material/DialogTitle';
+import TextField from '@mui/material/TextField';
+import IconButton from '@mui/material/IconButton';
+import SearchIcon from '@mui/icons-material/Search';
+import Select from '@mui/material/Select';
+import MenuItem from '@mui/material/MenuItem';
+import Checkbox from '@mui/material/Checkbox';
+import FormControlLabel from '@mui/material/FormControlLabel';
+import Radio from '@mui/material/Radio';
+import RadioGroup from '@mui/material/RadioGroup';
+import { DatePicker } from '@mui/lab';
+
+interface Field {
+  name: string;
+  label: string;
+  type: 'text' | 'search' | 'select' | 'checkbox' | 'radio' | 'date';
+  defaultValue?: any;
+  options?: string[];  // for select and radio type
+  multiline?: boolean; // only for text type
+}
+
+interface GenericDialogFormProps {
+  title: string;
+  open: boolean;
+  handleClose: () => void;
+  fields: Field[];
+  onSubmit: (data: any) => void;
+}
+
+const GenericDialogForm: React.FC<GenericDialogFormProps> = ({ title, open, handleClose, fields, onSubmit }) => {
+  const { handleSubmit, control } = useForm();
+
+  const submitForm = (data: any) => {
+    onSubmit(data);
+    handleClose();
+  };
+
+  const renderField = (field: Field) => {
+    switch (field.type) {
+      case 'text':
+      case 'search':
+        return (
+          <TextField
+            label={field.label}
+            multiline={field.multiline}
+            type={field.type}
+            InputProps={field.type === 'search' ? {
+              endAdornment: (
+                <IconButton>
+                  <SearchIcon />
+                </IconButton>
+              ),
+            } : {}}
+          />
+        );
+      case 'select':
+        return (
+          <Select>
+            {field.options?.map(option => <MenuItem key={option} value={option}>{option}</MenuItem>)}
+          </Select>
+        );
+      case 'checkbox':
+        return <FormControlLabel control={<Checkbox />} label={field.label} />;
+      case 'radio':
+        return (
+          <RadioGroup>
+            {field.options?.map(option => <FormControlLabel key={option} value={option} control={<Radio />} label={option} />)}
+          </RadioGroup>
+        );
+      case 'date':
+        return <DatePicker label={field.label} />;
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <Dialog open={open} onClose={handleClose}>
+      <DialogTitle>{title}</DialogTitle>
+      <DialogContent>
+        <form onSubmit={handleSubmit(submitForm)}>
+          {fields.map((field) => (
+            <Controller
+              key={field.name}
+              name={field.name}
+              control={control as Control}
+              defaultValue={field.defaultValue || ""}
+              render={({ field: controlledField }) => renderField({...field, ...controlledField})}
+            />
+          ))}
+          <DialogActions>
+            <Button onClick={handleClose}>Cancel</Button>
+            <Button type="submit">Connect</Button>
+          </DialogActions>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+export default GenericDialogForm;
