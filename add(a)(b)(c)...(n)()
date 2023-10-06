@@ -13,3 +13,40 @@ const add = (x) => {
 console.log(add(1)(2)(3)(4)())
 console.log(add(1)(2)())
 console.log(add(4)(4)(4)())
+const handleFilterModelChange = (newModel) => {
+  // Convert newModel into searchParams format
+  const updatedFilters = {};
+  newModel.items.forEach((filter) => {
+    if (filter.value) {
+      updatedFilters[filter.id] = filter.value;
+    }
+  });
+
+  // Get existing sort parameter if it exists
+  const currentSort = searchParams.get('sortBy');
+  const paramsToUpdate = currentSort ? { ...updatedFilters, sortBy: currentSort } : { ...updatedFilters };
+
+  // Update the search parameters
+  setSearchParams(prev => ({ ...prev, ...paramsToUpdate }));
+
+  // Call the API or any other necessary action after the update
+  fetchDataFromAPI();
+};
+
+const handleSortModelChange = (newModel) => {
+  // Convert sort model to your desired format
+  const sortString = newModel.map((sort) => `${sort.field}:${sort.sort}`).join(',');
+
+  // Preserve existing filter parameters
+  const currentSearchParams = Array.from(searchParams.entries())
+    .filter(([key]) => key !== 'sortBy' && Boolean(searchParams.get(key))) // filter out undefined or falsy values
+    .reduce((acc, [key, value]) => ({ ...acc, [key]: value }), {});
+
+  const paramsToUpdate = sortString ? { ...currentSearchParams, sortBy: sortString } : { ...currentSearchParams };
+
+  // Update the search parameters
+  setSearchParams(paramsToUpdate);
+
+  // Call the API or any other necessary action after the update
+  fetchDataFromAPI();
+};
