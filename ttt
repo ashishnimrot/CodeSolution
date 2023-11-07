@@ -1,3 +1,55 @@
+// generateFileName.test.ts
+import { generateFileName } from './generateFileName'; // assuming the function is exported from here
+
+describe('generateFileName', () => {
+
+  it('should generate a file name with the current date and time when no date is provided', () => {
+    // This test case can't check for an exact value since it depends on the current date and time.
+    // You can check for the correct format instead.
+    const regexPattern = /^\d{14}_abc\.csv$/;
+    const result = generateFileName();
+    expect(result).toMatch(regexPattern);
+  });
+
+  it('should generate a file name with the provided date and time', () => {
+    const testDate = new Date('2023-11-07T13:15:30Z'); // Fixed date for reproducibility
+    const result = generateFileName(testDate);
+    expect(result).toBe('20231107131530_abc.csv');
+  });
+
+  it('should handle dates around New Year correctly', () => {
+    const newYearDate = new Date('2023-01-01T00:00:00Z');
+    const result = generateFileName(newYearDate);
+    expect(result).toBe('20230101000000_abc.csv');
+  });
+
+  it('should pad single-digit months and days correctly', () => {
+    const testDate = new Date('2023-07-05T09:08:07Z'); // July 5th, single-digit month and day
+    const result = generateFileName(testDate);
+    expect(result).toBe('20230705090807_abc.csv');
+  });
+
+  it('should pad single-digit hours, minutes, and seconds correctly', () => {
+    const testDate = new Date('2023-11-07T01:02:03Z'); // 1:02:03 AM
+    const result = generateFileName(testDate);
+    expect(result).toBe('20231107010203_abc.csv');
+  });
+
+  it('should throw or handle an invalid date', () => {
+    const invalidDate = new Date(''); // Invalid date
+    expect(() => generateFileName(invalidDate)).toThrow();
+    // Or if your function handles errors internally and returns a string
+    // expect(generateFileName(invalidDate)).toBe('error_generating_filename_abc.csv');
+  });
+
+  // If your function includes timezone handling or you want to test specific timezone scenarios
+  it('should reflect the timezone offset correctly', () => {
+    const testDate = new Date('2023-11-07T13:15:30+0300'); // This date has a specific timezone
+    const result = generateFileName(testDate);
+    // The expected result should account for the timezone offset
+    expect(result).toBe('20231107101530_abc.csv'); // Adjust the expected result based on your function's behavior
+  });
+});
 
 function generateFileName(): string {
     const now = new Date();
